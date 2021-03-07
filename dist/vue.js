@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.6.12
- * (c) 2014-2020 Evan You
+ * (c) 2014-2021 Evan You
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -1784,18 +1784,19 @@
       " Expected " + (expectedTypes.map(capitalize).join(', '));
     var expectedType = expectedTypes[0];
     var receivedType = toRawType(value);
-    var expectedValue = styleValue(value, expectedType);
-    var receivedValue = styleValue(value, receivedType);
     // check if we need to specify expected value
-    if (expectedTypes.length === 1 &&
-        isExplicable(expectedType) &&
-        !isBoolean(expectedType, receivedType)) {
-      message += " with value " + expectedValue;
+    if (
+      expectedTypes.length === 1 &&
+      isExplicable(expectedType) &&
+      isExplicable(typeof value) &&
+      !isBoolean(expectedType, receivedType)
+    ) {
+      message += " with value " + (styleValue(value, expectedType));
     }
     message += ", got " + receivedType + " ";
     // check if we need to specify received value
     if (isExplicable(receivedType)) {
-      message += "with value " + receivedValue + ".";
+      message += "with value " + (styleValue(value, receivedType)) + ".";
     }
     return message
   }
@@ -1810,9 +1811,9 @@
     }
   }
 
+  var EXPLICABLE_TYPES = ['string', 'number', 'boolean'];
   function isExplicable (value) {
-    var explicitTypes = ['string', 'number', 'boolean'];
-    return explicitTypes.some(function (elem) { return value.toLowerCase() === elem; })
+    return EXPLICABLE_TYPES.some(function (elem) { return value.toLowerCase() === elem; })
   }
 
   function isBoolean () {
@@ -3273,8 +3274,10 @@
   }
 
   function createComponentInstanceForVnode (
-    vnode, // we know it's MountedComponentVNode but flow doesn't
-    parent // activeInstance in lifecycle state
+    // we know it's MountedComponentVNode but flow doesn't
+    vnode,
+    // activeInstance in lifecycle state
+    parent
   ) {
     var options = {
       _isComponent: true,
@@ -5070,18 +5073,27 @@
     return modified
   }
 
-  function Vue (options) {
-    if (!(this instanceof Vue)
-    ) {
-      warn('Vue is a constructor and should be called with the `new` keyword');
+  // 此处不用 class 的原因是因为方便后续给 Vue 实例混入实例成员
+  function Vue(options) {
+    if (!(this instanceof Vue)) {
+      warn("Vue is a constructor and should be called with the `new` keyword");
     }
+    // 调用 _init() 方法
     this._init(options);
   }
 
+  // 注册 vm 的 _init() 方法，初始化 vm
   initMixin(Vue);
+  // 注册 vm 的 $data/$props/$set/$delete/$watch
   stateMixin(Vue);
+  // 初始化事件相关方法
+  // $on/$once/$off/$emit
   eventsMixin(Vue);
+  // 初始化生命周期相关的混入方法
+  // _update/$forceUpdate/$destroy
   lifecycleMixin(Vue);
+  // 混入 render
+  // $nextTick/_render
   renderMixin(Vue);
 
   /*  */
@@ -5375,42 +5387,46 @@
 
   /*  */
 
-  function initGlobalAPI (Vue) {
+  function initGlobalAPI(Vue) {
     // config
     var configDef = {};
     configDef.get = function () { return config; };
     {
       configDef.set = function () {
         warn(
-          'Do not replace the Vue.config object, set individual fields instead.'
+          "Do not replace the Vue.config object, set individual fields instead."
         );
       };
     }
-    Object.defineProperty(Vue, 'config', configDef);
+    // 初始化 Vue.config 对象
+    Object.defineProperty(Vue, "config", configDef);
 
     // exposed util methods.
     // NOTE: these are not considered part of the public API - avoid relying on
     // them unless you are aware of the risk.
+    // 这些工具方法不视作全局API的一部分，除非你已经意识到某些风险，否则不要去依赖他们
     Vue.util = {
       warn: warn,
       extend: extend,
       mergeOptions: mergeOptions,
-      defineReactive: defineReactive$$1
+      defineReactive: defineReactive$$1,
     };
 
+    // 静态方法 set/delete/nextTick
     Vue.set = set;
     Vue.delete = del;
     Vue.nextTick = nextTick;
 
     // 2.6 explicit observable API
+    // 让一个对象可响应
     Vue.observable = function (obj) {
       observe(obj);
-      return obj
+      return obj;
     };
 
     Vue.options = Object.create(null);
     ASSET_TYPES.forEach(function (type) {
-      Vue.options[type + 's'] = Object.create(null);
+      Vue.options[type + "s"] = Object.create(null);
     });
 
     // this is used to identify the "base" constructor to extend all plain-object
@@ -5425,25 +5441,26 @@
     initAssetRegisters(Vue);
   }
 
+  // 给vue挂载静态方法
   initGlobalAPI(Vue);
 
-  Object.defineProperty(Vue.prototype, '$isServer', {
-    get: isServerRendering
+  Object.defineProperty(Vue.prototype, "$isServer", {
+    get: isServerRendering,
   });
 
-  Object.defineProperty(Vue.prototype, '$ssrContext', {
-    get: function get () {
+  Object.defineProperty(Vue.prototype, "$ssrContext", {
+    get: function get() {
       /* istanbul ignore next */
-      return this.$vnode && this.$vnode.ssrContext
-    }
+      return this.$vnode && this.$vnode.ssrContext;
+    },
   });
 
   // expose FunctionalRenderContext for ssr runtime helper installation
-  Object.defineProperty(Vue, 'FunctionalRenderContext', {
-    value: FunctionalRenderContext
+  Object.defineProperty(Vue, "FunctionalRenderContext", {
+    value: FunctionalRenderContext,
   });
 
-  Vue.version = '2.6.12';
+  Vue.version = "2.6.12";
 
   /*  */
 
@@ -5480,7 +5497,7 @@
     'default,defaultchecked,defaultmuted,defaultselected,defer,disabled,' +
     'enabled,formnovalidate,hidden,indeterminate,inert,ismap,itemscope,loop,multiple,' +
     'muted,nohref,noresize,noshade,novalidate,nowrap,open,pauseonexit,readonly,' +
-    'required,reversed,scoped,seamless,selected,sortable,translate,' +
+    'required,reversed,scoped,seamless,selected,sortable,' +
     'truespeed,typemustmatch,visible'
   );
 
@@ -6705,7 +6722,7 @@
       cur = attrs[key];
       old = oldAttrs[key];
       if (old !== cur) {
-        setAttr(elm, key, cur);
+        setAttr(elm, key, cur, vnode.data.pre);
       }
     }
     // #4391: in IE9, setting type can reset value for input[type=radio]
@@ -6725,8 +6742,8 @@
     }
   }
 
-  function setAttr (el, key, value) {
-    if (el.tagName.indexOf('-') > -1) {
+  function setAttr (el, key, value, isInPre) {
+    if (isInPre || el.tagName.indexOf('-') > -1) {
       baseSetAttr(el, key, value);
     } else if (isBooleanAttr(key)) {
       // set attribute for blank value
@@ -9022,6 +9039,8 @@
   /*  */
 
   // install platform specific utils
+  // 判断是否是关键属性(表单元素的 input/checked/selected/muted)
+  // 如果是这些属性，设置el.props属性(属性不设置到标签上)
   Vue.config.mustUseProp = mustUseProp;
   Vue.config.isReservedTag = isReservedTag;
   Vue.config.isReservedAttr = isReservedAttr;
@@ -9029,6 +9048,7 @@
   Vue.config.isUnknownElement = isUnknownElement;
 
   // install platform runtime directives & components
+  // 将第二个参数中的内容复制到第一个参数中
   extend(Vue.options.directives, platformDirectives);
   extend(Vue.options.components, platformComponents);
 
@@ -9041,7 +9061,7 @@
     hydrating
   ) {
     el = el && inBrowser ? query(el) : undefined;
-    return mountComponent(this, el, hydrating)
+    return mountComponent(this, el, hydrating);
   };
 
   // devtools global hook
@@ -9050,21 +9070,22 @@
     setTimeout(function () {
       if (config.devtools) {
         if (devtools) {
-          devtools.emit('init', Vue);
+          devtools.emit("init", Vue);
         } else {
-          console[console.info ? 'info' : 'log'](
-            'Download the Vue Devtools extension for a better development experience:\n' +
-            'https://github.com/vuejs/vue-devtools'
+          console[console.info ? "info" : "log"](
+            "Download the Vue Devtools extension for a better development experience:\n" +
+              "https://github.com/vuejs/vue-devtools"
           );
         }
       }
-      if (config.productionTip !== false &&
-        typeof console !== 'undefined'
+      if (
+        config.productionTip !== false &&
+        typeof console !== "undefined"
       ) {
-        console[console.info ? 'info' : 'log'](
+        console[console.info ? "info" : "log"](
           "You are running Vue in development mode.\n" +
-          "Make sure to turn on production mode when deploying for production.\n" +
-          "See more tips at https://vuejs.org/guide/deployment.html"
+            "Make sure to turn on production mode when deploying for production.\n" +
+            "See more tips at https://vuejs.org/guide/deployment.html"
         );
       }
     }, 0);
@@ -9247,7 +9268,7 @@
 
   // Regular Expressions for parsing tags and attributes
   var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
-  var dynamicArgAttribute = /^\s*((?:v-[\w-]+:|@|:|#)\[[^=]+\][^\s"'<>\/=]*)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
+  var dynamicArgAttribute = /^\s*((?:v-[\w-]+:|@|:|#)\[[^=]+?\][^\s"'<>\/=]*)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
   var ncname = "[a-zA-Z_][\\-\\.0-9_a-zA-Z" + (unicodeRegExp.source) + "]*";
   var qnameCapture = "((?:" + ncname + "\\:)?" + ncname + ")";
   var startTagOpen = new RegExp(("^<" + qnameCapture));
@@ -10850,9 +10871,9 @@
         code += genModifierCode;
       }
       var handlerCode = isMethodPath
-        ? ("return " + (handler.value) + "($event)")
+        ? ("return " + (handler.value) + ".apply(null, arguments)")
         : isFunctionExpression
-          ? ("return (" + (handler.value) + ")($event)")
+          ? ("return (" + (handler.value) + ").apply(null, arguments)")
           : isFunctionInvocation
             ? ("return " + (handler.value))
             : handler.value;
@@ -11871,31 +11892,38 @@
 
   var idToTemplate = cached(function (id) {
     var el = query(id);
-    return el && el.innerHTML
+    return el && el.innerHTML;
   });
 
+  // 保留 Vue 实例的 $mount 方法
   var mount = Vue.prototype.$mount;
   Vue.prototype.$mount = function (
     el,
+    // 非ssr情况下为 false，ssr 时候为true
     hydrating
   ) {
+    // 获取 el 对象
     el = el && query(el);
 
     /* istanbul ignore if */
+    // el 不能是 body 或者 html
     if (el === document.body || el === document.documentElement) {
       warn(
-        "Do not mount Vue to <html> or <body> - mount to normal elements instead."
-      );
-      return this
+          "Do not mount Vue to <html> or <body> - mount to normal elements instead."
+        );
+      return this;
     }
 
     var options = this.$options;
     // resolve template/el and convert to render function
+    // 把 template/el 转换成 render 函数
     if (!options.render) {
       var template = options.template;
       if (template) {
-        if (typeof template === 'string') {
-          if (template.charAt(0) === '#') {
+        if (typeof template === "string") {
+          // 如果模板是 id 选择器
+          if (template.charAt(0) === "#") {
+            // 获取对应的 DOM 对象的 innerHTML
             template = idToTemplate(template);
             /* istanbul ignore if */
             if (!template) {
@@ -11906,29 +11934,37 @@
             }
           }
         } else if (template.nodeType) {
+          // 如果模板是元素，返回元素的 innerHTML
           template = template.innerHTML;
         } else {
           {
-            warn('invalid template option:' + template, this);
+            warn("invalid template option:" + template, this);
           }
-          return this
+          // 否则返回当前实例
+          return this;
         }
       } else if (el) {
+        // 如果没有 template，获取el的 outerHTML 作为模板
         template = getOuterHTML(el);
       }
       if (template) {
         /* istanbul ignore if */
         if (config.performance && mark) {
-          mark('compile');
+          mark("compile");
         }
 
-        var ref = compileToFunctions(template, {
-          outputSourceRange: "development" !== 'production',
-          shouldDecodeNewlines: shouldDecodeNewlines,
-          shouldDecodeNewlinesForHref: shouldDecodeNewlinesForHref,
-          delimiters: options.delimiters,
-          comments: options.comments
-        }, this);
+        // 把 template 转换成 render 函数
+        var ref = compileToFunctions(
+          template,
+          {
+            outputSourceRange: "development" !== "production",
+            shouldDecodeNewlines: shouldDecodeNewlines,
+            shouldDecodeNewlinesForHref: shouldDecodeNewlinesForHref,
+            delimiters: options.delimiters,
+            comments: options.comments,
+          },
+          this
+        );
         var render = ref.render;
         var staticRenderFns = ref.staticRenderFns;
         options.render = render;
@@ -11936,25 +11972,26 @@
 
         /* istanbul ignore if */
         if (config.performance && mark) {
-          mark('compile end');
-          measure(("vue " + (this._name) + " compile"), 'compile', 'compile end');
+          mark("compile end");
+          measure(("vue " + (this._name) + " compile"), "compile", "compile end");
         }
       }
     }
-    return mount.call(this, el, hydrating)
+    // 调用 mount 方法，渲染 DOM
+    return mount.call(this, el, hydrating);
   };
 
   /**
    * Get outerHTML of elements, taking care
    * of SVG elements in IE as well.
    */
-  function getOuterHTML (el) {
+  function getOuterHTML(el) {
     if (el.outerHTML) {
-      return el.outerHTML
+      return el.outerHTML;
     } else {
-      var container = document.createElement('div');
+      var container = document.createElement("div");
       container.appendChild(el.cloneNode(true));
-      return container.innerHTML
+      return container.innerHTML;
     }
   }
 
@@ -11963,3 +12000,4 @@
   return Vue;
 
 }));
+//# sourceMappingURL=vue.js.map
