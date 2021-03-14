@@ -6,6 +6,7 @@ import { FunctionalRenderContext } from "core/vdom/create-functional-component";
 // 给vue挂载静态方法
 initGlobalAPI(Vue);
 
+/* 与SSL相关的属性 */
 Object.defineProperty(Vue.prototype, "$isServer", {
   get: isServerRendering,
 });

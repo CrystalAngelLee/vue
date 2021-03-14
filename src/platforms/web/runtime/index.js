@@ -29,14 +29,17 @@ Vue.config.getTagNamespace = getTagNamespace;
 Vue.config.isUnknownElement = isUnknownElement;
 
 // install platform runtime directives & components
+// 注册一些与平台相关的指令或组件: 全局内均可访问
 // 将第二个参数中的内容复制到第一个参数中
-extend(Vue.options.directives, platformDirectives);
-extend(Vue.options.components, platformComponents);
+extend(Vue.options.directives, platformDirectives); // 注册指令 v-model/v-show
+extend(Vue.options.components, platformComponents); // 注册组件 Transition/TransitionGroup
 
 // install platform patch function
+// 将虚拟DOM转换成真实DOM
 Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
 // public mount method
+// 给VUE的实例添加$mount的方法
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean

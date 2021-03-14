@@ -55,19 +55,28 @@ export function initGlobalAPI(Vue: GlobalAPI) {
     return obj;
   };
 
-  Vue.options = Object.create(null);
+  // 初始化 Vue.options 对象，并给其扩展
+  // components / directives / filters => 全局的组件/指令/过滤器
+  Vue.options = Object.create(null); // 创建对象并设置其原型为null:不需要原型：提高性能
   ASSET_TYPES.forEach((type) => {
     Vue.options[type + "s"] = Object.create(null);
   });
 
   // this is used to identify the "base" constructor to extend all plain-object
   // components with in Weex's multi-instance scenarios.
+  // 记录当前构造函数
   Vue.options._base = Vue;
 
+  // 注册全局 keep-alive 组件
+  // extend 出自'shared/util'
   extend(Vue.options.components, builtInComponents);
 
+  // 注册 Vue.use() 用来注册插件
   initUse(Vue);
+  // 注册 Vue.mixin() 实现混入
   initMixin(Vue);
+  // 注册 Vue.extend() 基于传入的 options 返回一个组件的构造函数：自定义组件可能用到
   initExtend(Vue);
+  // 注册 Vue.directive()、 Vue.component()、Vue.filter()
   initAssetRegisters(Vue);
 }

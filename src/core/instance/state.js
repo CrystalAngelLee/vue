@@ -48,16 +48,20 @@ export function proxy(target: Object, sourceKey: string, key: string) {
 export function initState(vm: Component) {
   vm._watchers = [];
   const opts = vm.$options;
+  // initProps：把props中的数据转换成响应式数据，挂载到实例中
   if (opts.props) initProps(vm, opts.props);
+  // initMethods：把选项中的methods注入到实例
   if (opts.methods) initMethods(vm, opts.methods);
   // 数据初始化
   if (opts.data) {
-    // 把data中的成员注入到实例并且转换成响应式对象
+    // 把data中的成员注入到实例并且把data转换成响应式对象
     initData(vm);
   } else {
+    // 初始化vm._data，并将data转换成响应式对象
     // 响应式处理的入口
     observe((vm._data = {}), true /* asRootData */);
   }
+  // 计算属性和监听器初始化
   if (opts.computed) initComputed(vm, opts.computed);
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch);
@@ -116,6 +120,8 @@ function initProps(vm: Component, propsOptions: Object) {
 
 function initData(vm: Component) {
   let data = vm.$options.data;
+  // 初始化_data,组件中data是函数，调用函数返回结果
+  // 否则直接返回data
   data = vm._data = typeof data === "function" ? getData(data, vm) : data || {};
   if (!isPlainObject(data)) {
     data = {};
@@ -127,10 +133,13 @@ function initData(vm: Component) {
       );
   }
   // proxy data on instance
+  // 获取data中所有属性
   const keys = Object.keys(data);
+  // 获取props/methods
   const props = vm.$options.props;
   const methods = vm.$options.methods;
   let i = keys.length;
+  // 判断 data 上的成员是否和 props/methods 重名
   while (i--) {
     const key = keys[i];
     if (process.env.NODE_ENV !== "production") {
@@ -149,6 +158,7 @@ function initData(vm: Component) {
           vm
         );
     } else if (!isReserved(key)) {
+      // 把key 注入到当前的实例中
       proxy(vm, `_data`, key);
     }
   }
@@ -280,9 +290,12 @@ function initMethods(vm: Component, methods: Object) {
           vm
         );
       }
+      // 判断props中是否有重名属性
       if (props && hasOwn(props, key)) {
         warn(`Method "${key}" has already been defined as a prop.`, vm);
       }
+      // 判断命名规范：不建议使用以_,$开头的命名
+      // isReserved： 判断key是否以_或$开头
       if (key in vm && isReserved(key)) {
         warn(
           `Method "${key}" conflicts with an existing Vue instance method. ` +
@@ -354,6 +367,7 @@ export function stateMixin(Vue: Class<Component>) {
   Vue.prototype.$set = set;
   Vue.prototype.$delete = del;
 
+  // 监视数据的变化
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,

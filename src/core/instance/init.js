@@ -13,6 +13,8 @@ import { extend, mergeOptions, formatComponentName } from "../util/index";
 let uid = 0;
 
 export function initMixin(Vue: Class<Component>) {
+  // 给Vue实例增加 _init 方法
+  // 合并 options / 初始化操作
   Vue.prototype._init = function (options?: Object) {
     const vm: Component = this;
     // a uid
@@ -27,6 +29,7 @@ export function initMixin(Vue: Class<Component>) {
     }
 
     // a flag to avoid this being observed
+    // 如果是 Vue 实例不需要被 observe
     vm._isVue = true;
     // merge options
     if (options && options._isComponent) {
@@ -35,6 +38,7 @@ export function initMixin(Vue: Class<Component>) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options);
     } else {
+      // 合并 options
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -45,6 +49,7 @@ export function initMixin(Vue: Class<Component>) {
     if (process.env.NODE_ENV !== "production") {
       initProxy(vm);
     } else {
+      // 设置渲染的代理对象
       vm._renderProxy = vm;
     }
     // expose real self
@@ -53,17 +58,18 @@ export function initMixin(Vue: Class<Component>) {
     // $children/$parent/$root/$refs
     initLifecycle(vm);
     // vm 的事件监听初始化, 父组件绑定在当前组件上的事件
+    // 获取父元素上附加的事件并绑定在当前组件
     initEvents(vm);
     // vm 的编译render初始化
     // $slots/$scopedSlots/_c/$createElement/$attrs/$listeners
     initRender(vm);
     // beforeCreate 生命钩子的回调
     callHook(vm, "beforeCreate");
-    // 把 inject 的成员注入到 vm 上
+    // 依赖注入实现：把 inject 的成员注入到 vm 上
     initInjections(vm); // resolve injections before data/props
-    // 初始化状态 vm 的 _props/methods/_data/computed/watch
+    // 初始化状态 vm 的 _props/methods/_data/computed/watch，并把他们的成员注入到vm上
     initState(vm);
-    // 初始化 provide
+    // 依赖注入实现：初始化 provide
     initProvide(vm); // resolve provide after data/props
     // created 生命钩子的回调
     callHook(vm, "created");
@@ -75,7 +81,9 @@ export function initMixin(Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag);
     }
 
+    // 如果没有提供 el，调用 $mount() 挂载
     if (vm.$options.el) {
+      // 挂载整个页面
       vm.$mount(vm.$options.el);
     }
   };
