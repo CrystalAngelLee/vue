@@ -33,7 +33,7 @@ export function initRender(vm: Component) {
   // normalization is always applied for the public version, used in
   // user-written render functions.
   // h 函数：将虚拟dom转换成真实dom
-  // ！！！对手写render函数进行渲染的方法
+  // ！！！对用户传递的render函数进行渲染的方法
   vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true);
 
   // $attrs & $listeners are exposed for easier HOC creation.
@@ -97,6 +97,7 @@ export function renderMixin(Vue: Class<Component>) {
 
   Vue.prototype._render = function (): VNode {
     const vm: Component = this;
+    // render： 用户传递或者模板编译后的
     const { render, _parentVnode } = vm.$options;
 
     if (_parentVnode) {
@@ -117,6 +118,8 @@ export function renderMixin(Vue: Class<Component>) {
       // separately from one another. Nested component's render fns are called
       // when parent component is patched.
       currentRenderingInstance = vm;
+      // vm._renderProxy： 指向vue实例
+      // vm.$createElement：h 函数
       vnode = render.call(vm._renderProxy, vm.$createElement);
     } catch (e) {
       handleError(e, vm, `render`);
