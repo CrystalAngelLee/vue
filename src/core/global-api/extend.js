@@ -17,10 +17,12 @@ export function initExtend(Vue: GlobalAPI) {
    * Class inheritance
    */
   Vue.extend = function (extendOptions: Object): Function {
+    // 记录组件选项对象
     extendOptions = extendOptions || {};
     // Vue 构造函数
     const Super = this;
     const SuperId = Super.cid;
+    // 从缓存中加载组件的构造函数
     const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {});
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId];

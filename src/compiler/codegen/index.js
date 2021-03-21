@@ -30,7 +30,9 @@ export class CodegenState {
     const isReservedTag = options.isReservedTag || no
     this.maybeComponent = (el: ASTElement) => !!el.component || !isReservedTag(el.tag)
     this.onceId = 0
+    // 存储静态根节点生成的代码
     this.staticRenderFns = []
+    // 记录当前处理的节点是否是用pre 标记的
     this.pre = false
   }
 }
@@ -45,6 +47,7 @@ export function generate (
   options: CompilerOptions
 ): CodegenResult {
   const state = new CodegenState(options)
+  // genElement：最终把AST对象转换成JS代码的位置
   const code = ast ? genElement(ast, state) : '_c("div")'
   return {
     render: `with(this){return ${code}}`,
@@ -53,10 +56,13 @@ export function generate (
 }
 
 export function genElement (el: ASTElement, state: CodegenState): string {
+  // 判断当前AST对象是否有parent属性
   if (el.parent) {
     el.pre = el.pre || el.parent.pre
   }
 
+  // 处理静态根节点
+  // staticProcessed标记当前对象是否已经被处理
   if (el.staticRoot && !el.staticProcessed) {
     return genStatic(el, state)
   } else if (el.once && !el.onceProcessed) {
@@ -70,6 +76,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
   } else if (el.tag === 'slot') {
     return genSlot(el, state)
   } else {
+    // 处理组件及内置的标签
     // component or element
     let code
     if (el.component) {
@@ -77,6 +84,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
     } else {
       let data
       if (!el.plain || (el.pre && state.maybeComponent(el))) {
+        // 生成元素的属性/指令/事件等
         data = genData(el, state)
       }
 
